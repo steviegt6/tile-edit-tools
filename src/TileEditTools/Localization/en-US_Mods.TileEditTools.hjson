@@ -1,0 +1,6 @@
+Items: {
+	MetaActuationRodItem: {
+		DisplayName: Meta Actuation Rod
+		Tooltip: ""
+	}
+}

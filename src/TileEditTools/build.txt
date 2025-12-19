@@ -1,0 +1,5 @@
+displayName = Tile Edit Tools
+author = tomat
+version = 1.0.0
+modReferences = Daybreak
+weakReferences = DragonLens
