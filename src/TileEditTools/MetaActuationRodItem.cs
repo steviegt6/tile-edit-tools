@@ -32,6 +32,28 @@ internal sealed class MetaActuationRodItem : ModItem, IPreRenderedItem
             Wiring.ActuateForced(x, y);
             return true;
         };
+
+        On_Wiring.DeActive += (orig, i, j) =>
+        {
+            if (Main.player[Wiring.CurrentUser].HeldItem.type != ModContent.ItemType<MetaActuationRodItem>())
+            {
+                orig(i, j);
+                return;
+            }
+
+            var tile = Main.tile[i, j];
+            if (!tile.HasTile)
+            {
+                return;
+            }
+
+            tile.IsActuated = true;
+            WorldGen.SquareTileFrame(i, j, resetFrame: false);
+            if (Main.netMode != NetmodeID.MultiplayerClient)
+            {
+                NetMessage.SendTileSquare(-1, i, j);
+            }
+        };
     }
 
     public override void SetDefaults()
@@ -50,7 +72,7 @@ internal sealed class MetaActuationRodItem : ModItem, IPreRenderedItem
         {
             return null;
         }
-        
+
         var tileX = Player.tileTargetX;
         var tileY = Player.tileTargetY;
 
