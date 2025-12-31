@@ -60,6 +60,29 @@ partial class ModImpl : INameProvider
                 break;
             }
 
+            case Networking.PacketKind.TileSectionExtras:
+            {
+                var tileX = reader.ReadInt32();
+                var tileY = reader.ReadInt32();
+                var width = reader.ReadUInt16();
+                var height = reader.ReadUInt16();
+
+                var framingPrevented = CompactBitArray.Deserialize(reader).ToBitArray();
+
+                var i = 0;
+                for (var x = tileX; x < tileX + width; x++)
+                for (var y = tileY; y < tileY + height; y++)
+                {
+                    var tile = Main.tile[x, y];
+                    {
+                        tile.Get<StasisRod.TileData>().FramingPrevented = framingPrevented[i];
+                    }
+                    i++;
+                }
+
+                break;
+            }
+
             case Networking.PacketKind.TileSquareExtras:
             {
                 var tileX = reader.ReadUInt16();
@@ -74,9 +97,9 @@ partial class ModImpl : INameProvider
                 for (var y = tileY; y < tileY + height; y++)
                 {
                     var tile = Main.tile[x, y];
-
-                    tile.Get<StasisRod.TileData>().FramingPrevented = framingPrevented[i];
-
+                    {
+                        tile.Get<StasisRod.TileData>().FramingPrevented = framingPrevented[i];
+                    }
                     i++;
                 }
 

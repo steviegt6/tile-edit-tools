@@ -11,6 +11,7 @@ public static class Networking
     public enum PacketKind : byte
     {
         CustomTileManipulation,
+        TileSectionExtras,
         TileSquareExtras,
     }
 
@@ -66,6 +67,15 @@ public static class Networking
 
         switch (msgType)
         {
+            case MessageID.TileSection:
+                SendTileSectionExtras(
+                    number,
+                    (int)number2,
+                    (ushort)number3,
+                    (ushort)number4
+                );
+                break;
+
             case MessageID.TileSquare:
                 SendTileSquareExtras(
                     number,
@@ -74,6 +84,42 @@ public static class Networking
                     (int)number4
                 );
                 break;
+        }
+    }
+
+    private static void SendTileSectionExtras(
+        int tileX,
+        int tileY,
+        ushort width,
+        ushort height
+    )
+    {
+        var p = ModContent.GetInstance<ModImpl>().GetPacket();
+        {
+            p.Write((byte)PacketKind.TileSectionExtras);
+        }
+
+        p.Write(tileX);
+        p.Write(tileY);
+        p.Write(width);
+        p.Write(height);
+
+        var framingPrevented = new BitArray(width * height);
+
+        var i = 0;
+        for (var x = tileX; x < tileX + width; x++)
+        for (var y = tileY; y < tileY + height; y++)
+        {
+            var tile = Main.tile[x, y];
+            {
+                framingPrevented[i] = tile.Get<StasisRod.TileData>().FramingPrevented;
+            }
+            i++;
+        }
+
+        var framingPreventedBits = CompactBitArray.FromBitArray(framingPrevented);
+        {
+            framingPreventedBits.Serialize(p);
         }
     }
 
@@ -125,25 +171,18 @@ public static class Networking
         p.Write((byte)height);
 
         var framingPrevented = new BitArray(width * height);
-        
+
         var i = 0;
         for (var x = tileX; x < tileX + width; x++)
         for (var y = tileY; y < tileY + height; y++)
         {
             var tile = Main.tile[x, y];
-            
-            /*
-            var bytes0 = (BitsByte)0;
             {
-                bytes0[0] = tile.Get<StasisRod.TileData>().FramingPrevented;
+                framingPrevented[i] = tile.Get<StasisRod.TileData>().FramingPrevented;
             }
-            */
-
-            framingPrevented[i] = tile.Get<StasisRod.TileData>().FramingPrevented;
-
             i++;
         }
-        
+
         var framingPreventedBits = CompactBitArray.FromBitArray(framingPrevented);
         {
             framingPreventedBits.Serialize(p);
