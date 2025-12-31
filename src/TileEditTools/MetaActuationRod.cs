@@ -28,7 +28,7 @@ public static class MetaActuationRod
             Item.CloneDefaults(ItemID.ActuationRod);
             Item.useTime = Item.useAnimation = 15;
             Item.value = 0;
-            // Item.mech = false;
+            Item.mech = false;
         }
 
         public override bool? UseItem(Player player)

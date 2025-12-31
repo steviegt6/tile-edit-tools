@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Daybreak.Common.Features.Hooks;
 using Daybreak.Common.Features.Rendering;
+using Daybreak.Common.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.DataStructures;
+using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
@@ -183,6 +187,8 @@ public static class StasisRod
             WallFrame_CancelStaticWallFraming
         );
         */
+
+        On_Main.DrawWires += DrawWires_DrawStasisIcons;
     }
 
     private delegate bool Orig_TileFrame(
@@ -221,30 +227,82 @@ public static class StasisRod
         );
     }
 
-    /*
-    private delegate bool Orig_WallFrame(
-        int i,
-        int j,
-        int type,
-        bool randomizeFrame,
-        ref int style,
-        ref int frameNumber
-    );
-
-    private static bool WallFrame_CancelStaticWallFraming(
-        Orig_WallFrame orig,
-        int i,
-        int j,
-        int type,
-        bool randomizeFrame,
-        ref int style,
-        ref int frameNumber
+    // TODO: Can be turned into an IL edit to DoDraw which allows these to exist
+    //       more in parallel.
+    private static void DrawWires_DrawStasisIcons(
+        On_Main.orig_DrawWires orig,
+        Main self
     )
     {
-        if (WorldGen.InWorld(i, j))
+        if (Main.LocalPlayer.HeldItem.type != ModContent.ItemType<FunctionalItem>())
         {
-            var tile
+            orig(self);
+            return;
+        }
+
+        var rect = new Rectangle(0, 0, 16, 16);
+
+        var tileStartX = (int)(Main.screenPosition.X / 16) - 1;
+        var tileEndX = (int)((Main.screenPosition.X + Main.screenWidth) / 16) + 2;
+        var tileStartY = (int)(Main.screenPosition.Y / 16) - 1;
+        var tileEndY = (int)((Main.screenPosition.Y + Main.screenHeight) / 16) + 5;
+
+        if (tileStartX < 0)
+        {
+            tileStartX = 0;
+        }
+
+        if (tileEndX > Main.maxTilesX)
+        {
+            tileEndX = Main.maxTilesX;
+        }
+
+        if (tileStartY < 0)
+        {
+            tileStartY = 0;
+        }
+
+        if (tileEndY > Main.maxTilesY)
+        {
+            tileEndY = Main.maxTilesY;
+        }
+
+        var tileOffset = Main.GetScreenOverdrawOffset();
+        for (var y = tileStartY + tileOffset.Y; y < tileEndY - tileOffset.Y; y++)
+        for (var x = tileStartX + tileOffset.X; x < tileEndX - tileOffset.X; x++)
+        {
+            var tile = Framing.GetTileSafely(x, y);
+
+            // Vanilla actuator logic for lighting...
+            /*
+            if (tile.Get<TileData>().FramingPrevented && (Lighting.Brightness(x, y) > 0f))
+            {
+                var lightColor = Lighting.GetColor(x, y);
+
+                switch (num6) {
+                    case 0:
+                        color5 = Microsoft.Xna.Framework.Color.White;
+                        break;
+                    case 2:
+                        color5 *= 0.5f;
+                        break;
+                    case 3:
+                        color5 = Microsoft.Xna.Framework.Color.Transparent;
+                        break;
+                }
+            }
+            */
+
+            if (tile.Get<TileData>().FramingPrevented)
+            {
+                Main.spriteBatch.Draw(
+                    new DrawParameters(Assets.Images.StaticCross.Asset)
+                    {
+                        Position = new Vector2(x * 16 - (int)Main.screenPosition.X, y * 16 - (int)Main.screenPosition.Y),
+                        Color = /*color5 * num*/ Color.White * 0.75f,
+                    }
+                );
+            }
         }
     }
-    */
 }
