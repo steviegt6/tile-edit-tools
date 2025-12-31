@@ -1,5 +1,4 @@
-﻿using Daybreak.Common.Features.Hooks;
-using Daybreak.Common.Features.Rendering;
+﻿using Daybreak.Common.Features.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -11,7 +10,7 @@ namespace TileEditTools;
 public static class MetaActuationRod
 {
     [LegacyName("MetaActuationRodItem")]
-    internal sealed class FunctionalItem : ModItem, IPreRenderedItem
+    public sealed class FunctionalItem : ModItem, IPreRenderedItem
     {
         public override string Texture => Assets.Images.Items.MetaActuationRod_Item.KEY;
 
@@ -20,43 +19,6 @@ public static class MetaActuationRod
             base.SetStaticDefaults();
 
             ItemID.Sets.AlsoABuildingItem[Type] = true;
-        }
-
-        [OnLoad]
-        private static void ApplyHooks()
-        {
-            On_Wiring.Actuate += (orig, x, y) =>
-            {
-                if (Main.player[Wiring.CurrentUser].HeldItem.type != ModContent.ItemType<FunctionalItem>())
-                {
-                    return orig(x, y);
-                }
-
-                Wiring.ActuateForced(x, y);
-                return true;
-            };
-
-            On_Wiring.DeActive += (orig, i, j) =>
-            {
-                if (Main.player[Wiring.CurrentUser].HeldItem.type != ModContent.ItemType<FunctionalItem>())
-                {
-                    orig(i, j);
-                    return;
-                }
-
-                var tile = Main.tile[i, j];
-                if (!tile.HasTile)
-                {
-                    return;
-                }
-
-                tile.IsActuated = true;
-                WorldGen.SquareTileFrame(i, j, resetFrame: false);
-                if (Main.netMode != NetmodeID.MultiplayerClient)
-                {
-                    NetMessage.SendTileSquare(-1, i, j);
-                }
-            };
         }
 
         public override void SetDefaults()
@@ -83,10 +45,13 @@ public static class MetaActuationRod
             {
                 return false;
             }
+            
+            ToggleActuate(tileX, tileY);
 
-            Wiring.ActuateForced(tileX, tileY);
-            NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 19, tileX, tileY);
-
+            if (Main.netMode != NetmodeID.SinglePlayer)
+            {
+                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 19, tileX, tileY);
+            }
             return true;
         }
 
@@ -99,5 +64,57 @@ public static class MetaActuationRod
 
             Main.spriteBatch.Draw(sourceTexture, Vector2.Zero, Color.White);
         }
+    }
+
+    public static bool? ToggleActuate(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY, fluff: 3))
+        {
+            return null;
+        }
+        
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        if (tile.IsActuated)
+        {
+            SetActuateOff(tile);
+            return false;
+        }
+        else
+        {
+            SetActuateOn(tile);
+            return true;
+        }
+    }
+    
+    public static void SetActuateOn(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY))
+        {
+            return;
+        }
+
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        SetActuateOn(tile);
+    }
+
+    public static void SetActuateOn(Tile tile)
+    {
+        tile.IsActuated = true;
+    }
+
+    public static void SetActuateOff(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY))
+        {
+            return;
+        }
+
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        SetActuateOff(tile);
+    }
+
+    public static void SetActuateOff(Tile tile)
+    {
+        tile.IsActuated = false;
     }
 }

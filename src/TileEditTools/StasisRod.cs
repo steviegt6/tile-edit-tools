@@ -59,7 +59,7 @@ public static class StasisRod
 
             ItemID.Sets.AlsoABuildingItem[Type] = true;
         }
-        
+
         public override void SetDefaults()
         {
             base.SetDefaults();
@@ -69,7 +69,43 @@ public static class StasisRod
             Item.value = 0;
             // Item.mech = false;
         }
-        
+
+        public override bool? UseItem(Player player)
+        {
+            if (player.itemAnimation <= 0 || !player.ItemTimeIsZero || !player.controlUseItem)
+            {
+                return null;
+            }
+
+            var tileX = Player.tileTargetX;
+            var tileY = Player.tileTargetY;
+
+            if (!WorldGen.InWorld(tileX, tileY))
+            {
+                return false;
+            }
+
+            var toggled = ToggleStasis(tileX, tileY);
+            if (!toggled.HasValue)
+            {
+                return false; // ?!
+            }
+
+            if (Main.netMode != NetmodeID.SinglePlayer)
+            {
+                var p = ModContent.GetInstance<ModImpl>().GetPacket();
+                {
+                    p.Write((byte)PacketKind.CustomTileManipulation);
+                    p.Write((byte)TileManipulationKind.ToggleTileStasis);
+                    p.Write((ushort)tileX);
+                    p.Write((ushort)tileY);
+                }
+                p.Send(toClient: -1, ignoreClient: -1);
+            }
+
+            return true;
+        }
+
         void IPreRenderedItem.PreRender(Texture2D sourceTexture)
         {
             Assets.Shaders.MetaActuationRodShader.Asset.Wait();
@@ -79,5 +115,57 @@ public static class StasisRod
 
             Main.spriteBatch.Draw(sourceTexture, Vector2.Zero, Color.White);
         }
+    }
+
+    public static bool? ToggleStasis(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY, fluff: 3))
+        {
+            return null;
+        }
+
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        if (tile.Get<TileData>().FramingPrevented)
+        {
+            SetStasisOff(tile);
+            return false;
+        }
+        else
+        {
+            SetStasisOn(tile);
+            return true;
+        }
+    }
+
+    public static void SetStasisOn(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY))
+        {
+            return;
+        }
+
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        SetStasisOn(tile);
+    }
+
+    public static void SetStasisOn(Tile tile)
+    {
+        tile.Get<TileData>().FramingPrevented = true;
+    }
+
+    public static void SetStasisOff(int tileX, int tileY)
+    {
+        if (!WorldGen.InWorld(tileX, tileY))
+        {
+            return;
+        }
+
+        var tile = Framing.GetTileSafely(tileX, tileY);
+        SetStasisOff(tile);
+    }
+
+    public static void SetStasisOff(Tile tile)
+    {
+        tile.Get<TileData>().FramingPrevented = false;
     }
 }
