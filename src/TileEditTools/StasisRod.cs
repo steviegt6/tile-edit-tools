@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using Daybreak.Common.Features.Hooks;
 using Daybreak.Common.Features.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -166,4 +168,83 @@ public static class StasisRod
 
         Networking.SyncTileSquare(tileX, tileY);
     }
+
+    [OnLoad]
+    private static void ApplyHooks()
+    {
+        MonoModHooks.Add(
+            typeof(TileLoader).GetMethod(nameof(TileLoader.TileFrame), BindingFlags.Public | BindingFlags.Static)!,
+            TileFrame_CancelStaticTileFraming
+        );
+
+        /*
+        MonoModHooks.Add(
+            typeof(WallLoader).GetMethod(nameof(WallLoader.WallFrame), BindingFlags.Public | BindingFlags.Static)!,
+            WallFrame_CancelStaticWallFraming
+        );
+        */
+    }
+
+    private delegate bool Orig_TileFrame(
+        int i,
+        int j,
+        int type,
+        ref bool resetFrame,
+        ref bool noBreak
+    );
+
+    private static bool TileFrame_CancelStaticTileFraming(
+        Orig_TileFrame orig,
+        int i,
+        int j,
+        int type,
+        ref bool resetFrame,
+        ref bool noBreak
+    )
+    {
+        if (WorldGen.InWorld(i, j))
+        {
+            var tile = Framing.GetTileSafely(i, j);
+
+            if (tile.Get<TileData>().FramingPrevented)
+            {
+                return false;
+            }
+        }
+
+        return orig(
+            i,
+            j,
+            type,
+            ref resetFrame,
+            ref noBreak
+        );
+    }
+
+    /*
+    private delegate bool Orig_WallFrame(
+        int i,
+        int j,
+        int type,
+        bool randomizeFrame,
+        ref int style,
+        ref int frameNumber
+    );
+
+    private static bool WallFrame_CancelStaticWallFraming(
+        Orig_WallFrame orig,
+        int i,
+        int j,
+        int type,
+        bool randomizeFrame,
+        ref int style,
+        ref int frameNumber
+    )
+    {
+        if (WorldGen.InWorld(i, j))
+        {
+            var tile
+        }
+    }
+    */
 }
