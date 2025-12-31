@@ -6,17 +6,6 @@ using Terraria.ID;
 
 namespace TileEditTools;
 
-internal enum PacketKind : byte
-{
-    CustomTileManipulation,
-}
-
-internal enum TileManipulationKind : byte
-{
-    ToggleTileStasis,
-    ForceToggleActuation,
-}
-
 partial class ModImpl : INameProvider
 {
     string INameProvider.GetName(Type type)
@@ -27,13 +16,13 @@ partial class ModImpl : INameProvider
     public override void HandlePacket(BinaryReader reader, int whoAmI)
     {
         base.HandlePacket(reader, whoAmI);
-        
-        var packetKind = (PacketKind)reader.ReadByte();
+
+        var packetKind = (Networking.PacketKind)reader.ReadByte();
         switch (packetKind)
         {
-            case PacketKind.CustomTileManipulation:
+            case Networking.PacketKind.CustomTileManipulation:
             {
-                var tileManipulationKind = (TileManipulationKind)reader.ReadByte();
+                var tileManipulationKind = (Networking.TileManipulationKind)reader.ReadByte();
                 var tileX = reader.ReadUInt16();
                 var tileY = reader.ReadUInt16();
 
@@ -44,11 +33,11 @@ partial class ModImpl : INameProvider
 
                 switch (tileManipulationKind)
                 {
-                    case TileManipulationKind.ToggleTileStasis:
+                    case Networking.TileManipulationKind.ToggleTileStasis:
                         StasisRod.ToggleStasis(tileX, tileY);
                         break;
 
-                    case TileManipulationKind.ForceToggleActuation:
+                    case Networking.TileManipulationKind.ForceToggleActuation:
                         Wiring.SetCurrentUser(whoAmI);
                         MetaActuationRod.ToggleActuate(tileX, tileY);
                         Wiring.SetCurrentUser();
@@ -59,15 +48,38 @@ partial class ModImpl : INameProvider
                 {
                     var p = GetPacket();
                     {
-                        p.Write((byte)PacketKind.CustomTileManipulation);
+                        p.Write((byte)Networking.PacketKind.CustomTileManipulation);
                         p.Write((byte)tileManipulationKind);
                         p.Write(tileX);
                         p.Write(tileY);
                     }
                     p.Send(toClient: -1, ignoreClient: whoAmI);
                 }
-                
+
                 StasisRod.SetStasisOn(tileX, tileY);
+                break;
+            }
+
+            case Networking.PacketKind.TileSquareExtras:
+            {
+                var tileX = reader.ReadUInt16();
+                var tileY = reader.ReadUInt16();
+                var width = reader.ReadByte();
+                var height = reader.ReadByte();
+
+                var framingPrevented = CompactBitArray.Deserialize(reader).ToBitArray();
+
+                var i = 0;
+                for (var x = tileX; x < tileX + width; x++)
+                for (var y = tileY; y < tileY + height; y++)
+                {
+                    var tile = Main.tile[x, y];
+
+                    tile.Get<StasisRod.TileData>().FramingPrevented = framingPrevented[i];
+
+                    i++;
+                }
+
                 break;
             }
 

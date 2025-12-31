@@ -46,11 +46,22 @@ public static class MetaActuationRod
                 return false;
             }
 
-            ToggleActuate(tileX, tileY);
+            var toggled = ToggleActuate(tileX, tileY);
+            if (!toggled.HasValue)
+            {
+                return false; // ?!
+            }
 
             if (Main.netMode != NetmodeID.SinglePlayer)
             {
-                NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 19, tileX, tileY);
+                var p = ModContent.GetInstance<ModImpl>().GetPacket();
+                {
+                    p.Write((byte)Networking.PacketKind.CustomTileManipulation);
+                    p.Write((byte)Networking.TileManipulationKind.ForceToggleActuation);
+                    p.Write((ushort)tileX);
+                    p.Write((ushort)tileY);
+                }
+                p.Send(toClient: -1, ignoreClient: -1);
             }
 
             return true;
@@ -99,10 +110,7 @@ public static class MetaActuationRod
             tile.IsActuated = true;
         }
 
-        if (Main.netMode != NetmodeID.MultiplayerClient)
-        {
-            NetMessage.SendTileSquare(-1, tileX, tileY);
-        }
+        Networking.SyncTileSquare(tileX, tileY);
     }
 
     public static void SetActuateOff(int tileX, int tileY)
@@ -117,9 +125,6 @@ public static class MetaActuationRod
             tile.IsActuated = false;
         }
 
-        if (Main.netMode != NetmodeID.MultiplayerClient)
-        {
-            NetMessage.SendTileSquare(-1, tileX, tileY);
-        }
+        Networking.SyncTileSquare(tileX, tileY);
     }
 }

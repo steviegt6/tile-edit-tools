@@ -13,6 +13,14 @@ internal readonly record struct CompactBitArray(
         w.Write(BitLength);
         w.Write(Array);
     }
+
+    public BitArray ToBitArray()
+    {
+        return new BitArray(Array)
+        {
+            Length = BitLength,
+        };
+    }
     
     public static CompactBitArray Deserialize(BinaryReader r)
     {

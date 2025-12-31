@@ -95,8 +95,8 @@ public static class StasisRod
             {
                 var p = ModContent.GetInstance<ModImpl>().GetPacket();
                 {
-                    p.Write((byte)PacketKind.CustomTileManipulation);
-                    p.Write((byte)TileManipulationKind.ToggleTileStasis);
+                    p.Write((byte)Networking.PacketKind.CustomTileManipulation);
+                    p.Write((byte)Networking.TileManipulationKind.ToggleTileStasis);
                     p.Write((ushort)tileX);
                     p.Write((ushort)tileY);
                 }
@@ -149,10 +149,7 @@ public static class StasisRod
             tile.Get<TileData>().FramingPrevented = true;
         }
 
-        if (Main.netMode != NetmodeID.MultiplayerClient)
-        {
-            NetMessage.SendTileSquare(-1, tileX, tileY);
-        }
+        Networking.SyncTileSquare(tileX, tileY);
     }
 
     public static void SetStasisOff(int tileX, int tileY)
@@ -167,9 +164,6 @@ public static class StasisRod
             tile.Get<TileData>().FramingPrevented = false;
         }
 
-        if (Main.netMode != NetmodeID.MultiplayerClient)
-        {
-            NetMessage.SendTileSquare(-1, tileX, tileY);
-        }
+        Networking.SyncTileSquare(tileX, tileY);
     }
 }
