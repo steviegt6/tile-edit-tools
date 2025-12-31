@@ -127,12 +127,12 @@ public static class StasisRod
         var tile = Framing.GetTileSafely(tileX, tileY);
         if (tile.Get<TileData>().FramingPrevented)
         {
-            SetStasisOff(tile);
+            SetStasisOff(tileX, tileY);
             return false;
         }
         else
         {
-            SetStasisOn(tile);
+            SetStasisOn(tileX, tileY);
             return true;
         }
     }
@@ -145,12 +145,14 @@ public static class StasisRod
         }
 
         var tile = Framing.GetTileSafely(tileX, tileY);
-        SetStasisOn(tile);
-    }
+        {
+            tile.Get<TileData>().FramingPrevented = true;
+        }
 
-    public static void SetStasisOn(Tile tile)
-    {
-        tile.Get<TileData>().FramingPrevented = true;
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+        {
+            NetMessage.SendTileSquare(-1, tileX, tileY);
+        }
     }
 
     public static void SetStasisOff(int tileX, int tileY)
@@ -161,11 +163,13 @@ public static class StasisRod
         }
 
         var tile = Framing.GetTileSafely(tileX, tileY);
-        SetStasisOff(tile);
-    }
+        {
+            tile.Get<TileData>().FramingPrevented = false;
+        }
 
-    public static void SetStasisOff(Tile tile)
-    {
-        tile.Get<TileData>().FramingPrevented = false;
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+        {
+            NetMessage.SendTileSquare(-1, tileX, tileY);
+        }
     }
 }

@@ -45,13 +45,14 @@ public static class MetaActuationRod
             {
                 return false;
             }
-            
+
             ToggleActuate(tileX, tileY);
 
             if (Main.netMode != NetmodeID.SinglePlayer)
             {
                 NetMessage.SendData(MessageID.TileManipulation, -1, -1, null, 19, tileX, tileY);
             }
+
             return true;
         }
 
@@ -72,20 +73,20 @@ public static class MetaActuationRod
         {
             return null;
         }
-        
+
         var tile = Framing.GetTileSafely(tileX, tileY);
         if (tile.IsActuated)
         {
-            SetActuateOff(tile);
+            SetActuateOff(tileX, tileY);
             return false;
         }
         else
         {
-            SetActuateOn(tile);
+            SetActuateOn(tileX, tileY);
             return true;
         }
     }
-    
+
     public static void SetActuateOn(int tileX, int tileY)
     {
         if (!WorldGen.InWorld(tileX, tileY))
@@ -94,12 +95,14 @@ public static class MetaActuationRod
         }
 
         var tile = Framing.GetTileSafely(tileX, tileY);
-        SetActuateOn(tile);
-    }
+        {
+            tile.IsActuated = true;
+        }
 
-    public static void SetActuateOn(Tile tile)
-    {
-        tile.IsActuated = true;
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+        {
+            NetMessage.SendTileSquare(-1, tileX, tileY);
+        }
     }
 
     public static void SetActuateOff(int tileX, int tileY)
@@ -110,11 +113,13 @@ public static class MetaActuationRod
         }
 
         var tile = Framing.GetTileSafely(tileX, tileY);
-        SetActuateOff(tile);
-    }
+        {
+            tile.IsActuated = false;
+        }
 
-    public static void SetActuateOff(Tile tile)
-    {
-        tile.IsActuated = false;
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+        {
+            NetMessage.SendTileSquare(-1, tileX, tileY);
+        }
     }
 }
