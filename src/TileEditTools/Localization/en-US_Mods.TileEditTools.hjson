@@ -2,10 +2,10 @@ Items: {
 	MetaActuationRodFunctionalItem: {
 		DisplayName: Meta-Actuation Rod
 		Tooltip:
-		    '''
-		    Actuates tiles regardless of whether an actuator is present
-		    Can actuate tiles that can't normally be actuated
-		    '''
+			'''
+			Actuates tiles regardless of whether an actuator is present
+			Can actuate tiles that can't normally be actuated
+			'''
 	}
 
 	StasisRodFunctionalItem: {
