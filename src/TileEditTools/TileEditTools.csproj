@@ -7,6 +7,10 @@
     <ItemGroup>
         <Publicize Include="FNA" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
         <Publicize Include="ReLogic" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
+        <Publicize Include="DragonLens" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
+        <Publicize Include="StructureHelper" IncludeCompilerGeneratedMembers="false" IncludeVirtualMembers="false"/>
+
+        <DoNotPublicize Include="DragonLens:System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute"/>
     </ItemGroup>
 
     <ItemGroup>

@@ -240,8 +240,6 @@ public static class StasisRod
             return;
         }
 
-        var rect = new Rectangle(0, 0, 16, 16);
-
         var tileStartX = (int)(Main.screenPosition.X / 16) - 1;
         var tileEndX = (int)((Main.screenPosition.X + Main.screenWidth) / 16) + 2;
         var tileStartY = (int)(Main.screenPosition.Y / 16) - 1;
