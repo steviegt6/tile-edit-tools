@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Daybreak.Common.Features.Hooks;
@@ -7,6 +8,7 @@ using Daybreak.Common.Features.Rendering;
 using Daybreak.Common.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoMod.Cil;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
@@ -131,6 +133,12 @@ public static class StasisRod
         }
 
         var tile = Framing.GetTileSafely(tileX, tileY);
+        if (!tile.HasTile)
+        {
+            SetStasisOff(tileX, tileY);
+            return false;
+        }
+        
         if (tile.Get<TileData>().FramingPrevented)
         {
             SetStasisOff(tileX, tileY);
@@ -189,6 +197,7 @@ public static class StasisRod
         */
 
         On_Main.DrawWires += DrawWires_DrawStasisIcons;
+        IL_WorldGen.KillTile += KillTile_RemoveStasis; 
     }
 
     private delegate bool Orig_TileFrame(
@@ -302,5 +311,30 @@ public static class StasisRod
                 );
             }
         }
+    }
+    
+    private static void KillTile_RemoveStasis(ILContext il)
+    {
+        var c = new ILCursor(il)
+        {
+            Next = null,
+        };
+
+        var tileIdx = -1;
+        c.GotoPrev(x => x.MatchCall<Tile>("get_" + nameof(Tile.type)));
+        c.GotoPrev(MoveType.Before, x => x.MatchLdloca(out tileIdx));
+        {
+            Debug.Assert(tileIdx != -1);
+        }
+
+        c.MoveAfterLabels();
+
+        c.EmitLdloca(tileIdx);
+        c.EmitDelegate(
+            (ref Tile t) =>
+            {
+                t.Get<TileData>().FramingPrevented = false;
+            }
+        );
     }
 }
