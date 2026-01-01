@@ -178,26 +178,6 @@ public static class StasisRod
         Networking.SyncTileSquare(tileX, tileY);
     }
 
-    [GlobalTileHooks.ReplaceTile]
-    private static void RemoveStasisOnBlockSwap(
-        int i,
-        int j,
-        int type,
-        int targetType,
-        int targetStyle
-    )
-    {
-        if (!WorldGen.InWorld(i, j))
-        {
-            return;
-        }
-
-        var tile = Framing.GetTileSafely(i, j);
-        {
-            tile.Get<TileData>().FramingPrevented = false;
-        }
-    }
-
     [OnLoad]
     private static void ApplyHooks()
     {
@@ -215,6 +195,7 @@ public static class StasisRod
 
         On_Main.DrawWires += DrawWires_DrawStasisIcons;
         IL_WorldGen.KillTile += KillTile_RemoveStasis;
+        On_WorldGen.ReplaceTIle_DoActualReplacement += DoActualReplacement_RemoveStasis;
     }
 
     private delegate bool Orig_TileFrame(
@@ -352,6 +333,26 @@ public static class StasisRod
             {
                 t.Get<TileData>().FramingPrevented = false;
             }
+        );
+    }
+
+    private static void DoActualReplacement_RemoveStasis(
+        On_WorldGen.orig_ReplaceTIle_DoActualReplacement orig,
+        ushort targetType,
+        int targetStyle,
+        int topLeftX,
+        int topLeftY,
+        Tile t
+    )
+    {
+        t.Get<TileData>().FramingPrevented = false;
+        
+        orig(
+            targetType,
+            targetStyle,
+            topLeftX,
+            topLeftY,
+            t
         );
     }
 }
