@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,8 +9,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
 using Terraria;
-using Terraria.DataStructures;
-using Terraria.GameContent;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
@@ -138,7 +135,7 @@ public static class StasisRod
             SetStasisOff(tileX, tileY);
             return false;
         }
-        
+
         if (tile.Get<TileData>().FramingPrevented)
         {
             SetStasisOff(tileX, tileY);
@@ -181,6 +178,26 @@ public static class StasisRod
         Networking.SyncTileSquare(tileX, tileY);
     }
 
+    [GlobalTileHooks.ReplaceTile]
+    private static void RemoveStasisOnBlockSwap(
+        int i,
+        int j,
+        int type,
+        int targetType,
+        int targetStyle
+    )
+    {
+        if (!WorldGen.InWorld(i, j))
+        {
+            return;
+        }
+
+        var tile = Framing.GetTileSafely(i, j);
+        {
+            tile.Get<TileData>().FramingPrevented = false;
+        }
+    }
+
     [OnLoad]
     private static void ApplyHooks()
     {
@@ -197,7 +214,7 @@ public static class StasisRod
         */
 
         On_Main.DrawWires += DrawWires_DrawStasisIcons;
-        IL_WorldGen.KillTile += KillTile_RemoveStasis; 
+        IL_WorldGen.KillTile += KillTile_RemoveStasis;
     }
 
     private delegate bool Orig_TileFrame(
@@ -312,7 +329,7 @@ public static class StasisRod
             }
         }
     }
-    
+
     private static void KillTile_RemoveStasis(ILContext il)
     {
         var c = new ILCursor(il)
