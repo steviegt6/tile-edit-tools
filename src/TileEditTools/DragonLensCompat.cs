@@ -22,8 +22,8 @@ namespace TileEditTools;
 [ExtendsFromMod("DragonLens")]
 internal static class DragonLensCompat
 {
-    [ExtensionDataFor<PaintWindow>]
     [ExtendsFromMod("DragonLens")]
+    [ExtensionDataFor<PaintWindow>]
     public sealed class PaintWindowButtons
     {
         public required ToggleButton IgnoreWallsButton { get; set; }
