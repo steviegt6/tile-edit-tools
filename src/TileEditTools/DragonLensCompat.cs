@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Daybreak.Common.Features.Hooks;
 using Daybreak.Common.UI;
@@ -55,7 +54,7 @@ internal static class DragonLensCompat
         );
     }
 
-    private static unsafe void PaintWindow_SafeClick_AddSpecialTileData(ILContext il)
+    private static void PaintWindow_SafeClick_AddSpecialTileData(ILContext il)
     {
         var c = new ILCursor(il);
 
@@ -82,17 +81,18 @@ internal static class DragonLensCompat
                     );
                 }
 
-                if (self.Buttons is not { IgnoringWalls: true })
+                if (self.Buttons is not { IgnoringWalls: true }
+                 || data.dataEntries["Terraria/WallTypeData"] is not TileDataEntry<WallTypeData> wallData)
                 {
                     return data;
+                }
+
+                for (var i = 0; i < x; i++)
+                {
+                    data.slowColumns[i] = true;
                 }
 
                 data.moddedWallTable[ushort.MaxValue] = ushort.MaxValue;
-
-                if (data.dataEntries["Terraria/WallTypeData"] is not TileDataEntry<WallTypeData> wallData)
-                {
-                    return data;
-                }
 
                 for (var i = 0; i < wallData.rawData.Length; i++)
                 {
@@ -285,3 +285,6 @@ internal static class DragonLensCompat
         }
     }
 }
+
+[ExtendsFromMod("DragonLens")]
+partial class PaintWindow_Buttons_CwtExtensions;
