@@ -55,14 +55,21 @@ internal static class DragonLensCompat
         );
     }
 
-    private static void PaintWindow_SafeClick_AddSpecialTileData(ILContext il)
+    private static unsafe void PaintWindow_SafeClick_AddSpecialTileData(ILContext il)
     {
         var c = new ILCursor(il);
 
         c.GotoNext(MoveType.Before, x => x.MatchCall(typeof(Saver), nameof(Saver.SaveToStructureData)));
         c.Remove();
+        c.EmitLdarg0();
         c.EmitDelegate(
-            (int x, int y, int width, int height) =>
+            (
+                int x,
+                int y,
+                int width,
+                int height,
+                PaintWindow self
+            ) =>
             {
                 var data = Saver.SaveToStructureData(x, y, width, height);
                 {
@@ -73,6 +80,23 @@ internal static class DragonLensCompat
                         width,
                         height
                     );
+                }
+
+                if (self.Buttons is not { IgnoringWalls: true })
+                {
+                    return data;
+                }
+
+                data.moddedWallTable[ushort.MaxValue] = ushort.MaxValue;
+
+                if (data.dataEntries["Terraria/WallTypeData"] is not TileDataEntry<WallTypeData> wallData)
+                {
+                    return data;
+                }
+
+                for (var i = 0; i < wallData.rawData.Length; i++)
+                {
+                    wallData.rawData[i].Type = ushort.MaxValue;
                 }
 
                 return data;
