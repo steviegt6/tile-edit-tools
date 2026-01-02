@@ -19,4 +19,8 @@
         <ProjectReference Include="..\daybreak-mod\src\Daybreak.CodeAnalysis\Daybreak.CodeAnalysis.csproj" PrivateAssets="All" ReferenceOutputAssembly="false" OutputItemType="Analyzer"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="GoldMeridian.KeyGen" Version="1.0.0" PrivateAssets="All" ReferenceOutputAssembly="false" OutputItemType="Analyzer"/>
+    </ItemGroup>
+
 </Project>

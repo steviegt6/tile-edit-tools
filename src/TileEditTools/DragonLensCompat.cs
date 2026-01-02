@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Daybreak.Common.Features.Hooks;
+using Daybreak.Common.UI;
+using DragonLens.Content.GUI;
 using DragonLens.Content.Tools.Gameplay;
+using GoldMeridian.CodeAnalysis;
+using Microsoft.Xna.Framework;
 using MonoMod.Cil;
 using StructureHelper;
 using StructureHelper.API;
@@ -19,6 +23,14 @@ namespace TileEditTools;
 [ExtendsFromMod("DragonLens")]
 internal static class DragonLensCompat
 {
+    [ExtensionDataFor<PaintWindow>]
+    public sealed class PaintWindowButtons
+    {
+        public required ToggleButton IgnoreWallsButton { get; set; }
+
+        public bool IgnoringWalls { get; set; }
+    }
+
     [OnLoad]
     private static void ApplyHooks()
     {
@@ -30,6 +42,16 @@ internal static class DragonLensCompat
         MonoModHooks.Modify(
             typeof(PaintWindow).GetMethod(nameof(PaintWindow.DraggableUdpate), BindingFlags.Public | BindingFlags.Instance)!,
             PaintWindow_DraggableUpdate_UseSpecialTileData
+        );
+
+        MonoModHooks.Add(
+            typeof(PaintWindow).GetMethod(nameof(PaintWindow.SafeOnInitialize), BindingFlags.Public | BindingFlags.Instance)!,
+            SafeOnInitialize_AddNewButtons
+        );
+
+        MonoModHooks.Add(
+            typeof(PaintWindow).GetMethod(nameof(PaintWindow.AdjustPositions), BindingFlags.Public | BindingFlags.Instance)!,
+            AdjustPositions_AdjustNewButtons
         );
     }
 
@@ -185,5 +207,57 @@ internal static class DragonLensCompat
         }
 
         NetMessage.SendTileSquare(-1, pos.X, pos.Y, data.width, data.height);
+    }
+
+    private static void SafeOnInitialize_AddNewButtons(
+        Action<PaintWindow> orig,
+        PaintWindow self
+    )
+    {
+        orig(self);
+
+        var ignoreWallsButton = new ToggleButton(
+            Assets.Images.IgnoresWallsToggle.KEY,
+            () => self.Buttons?.IgnoringWalls ?? false,
+            Mods.TileEditTools.UI.IgnoresWallsToggle.GetTextValue()
+        );
+        {
+            ignoreWallsButton.OnLeftClick += (_, _) =>
+            {
+                self.Buttons?.IgnoringWalls = !(self.Buttons?.IgnoringWalls ?? false);
+            };
+        }
+        self.Append(ignoreWallsButton);
+
+        self.Buttons = new PaintWindowButtons
+        {
+            IgnoreWallsButton = ignoreWallsButton,
+        };
+    }
+
+    private static void AdjustPositions_AdjustNewButtons(
+        Action<PaintWindow, Vector2> orig,
+        PaintWindow self,
+        Vector2 newPos
+    )
+    {
+        orig(self, newPos);
+
+        if (self.Buttons is not { } buttons)
+        {
+            return;
+        }
+
+        var ignoreWallsButton = buttons.IgnoreWallsButton;
+        {
+            /*
+            ignoreWallsButton.Left.Set(newPos.X + 344, 0);
+            ignoreWallsButton.Top.Set(newPos.X + 80, 0);
+            */
+
+            ignoreWallsButton.Left = self.sampleButton.Left;
+            ignoreWallsButton.Top = self.sampleButton.Top;
+            ignoreWallsButton.Top.Pixels += ignoreWallsButton.Dimensions.Height + 10f;
+        }
     }
 }

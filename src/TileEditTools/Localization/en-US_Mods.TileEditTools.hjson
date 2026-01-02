@@ -13,3 +13,5 @@ Items: {
 		Tooltip: Attempts to force tiles to keep their current state, preventing framing/breaking of invalid tiles
 	}
 }
+
+UI.IgnoresWallsToggle: Whether to ignore walls when saving the structure

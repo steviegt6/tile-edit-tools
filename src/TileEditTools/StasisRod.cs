@@ -346,7 +346,7 @@ public static class StasisRod
     )
     {
         t.Get<TileData>().FramingPrevented = false;
-        
+
         orig(
             targetType,
             targetStyle,
